@@ -12,3 +12,6 @@ spell/
 nvim-pack-lock.json
 
 .DS_Store
+
+# Leftover from old lazy.nvim plugin manager (config now uses vim.pack)
+lazy-lock.json
