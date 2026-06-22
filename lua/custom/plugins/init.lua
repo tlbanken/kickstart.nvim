@@ -3,6 +3,19 @@
 --
 -- See the kickstart.nvim README for more information
 
+vim.opt.pumheight = 5
+
+-- Function to toggle linting Diagnostics
+vim.api.nvim_create_user_command('DiagnosticToggle', function()
+  local config = vim.diagnostic.config
+  local vt = config().virtual_text
+  config {
+    virtual_text = not vt,
+    underline = not vt,
+    signs = not vt,
+  }
+end, { desc = 'toggle diagnostic' })
+
 -- Iterate over all Lua files in the plugins directory and load them
 local plugins_dir = vim.fs.joinpath(vim.fn.stdpath 'config', 'lua', 'custom', 'plugins')
 for file_name, type in vim.fs.dir(plugins_dir, { follow = true }) do
