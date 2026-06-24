@@ -101,6 +101,10 @@ do
   -- Set to true if you have a Nerd Font installed and selected in the terminal
   vim.g.have_nerd_font = false
 
+  -- Disable Neovim's default behavior of forcing Rust files to 4 spaces,
+  -- allowing guess-indent.nvim to successfully auto-detect and set the indentation.
+  vim.g.rust_recommended_style = 0
+
   -- [[ Setting options ]]
   --  See `:help vim.o`
   -- NOTE: You can change these options as you wish!
@@ -126,6 +130,13 @@ do
 
   -- Enable break indent
   vim.o.breakindent = true
+
+  -- Set default indentation configuration
+  -- Note: guess-indent.nvim is installed and will auto-detect/override these settings
+  -- for existing files based on their contents.
+  vim.o.tabstop = 4
+  vim.o.shiftwidth = 4
+  vim.o.expandtab = true
 
   -- Enable undo/redo changes even after closing and reopening a file
   vim.o.undofile = true
@@ -249,6 +260,9 @@ do
   -- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
   -- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
 
+  -- Open/edit Neovim configuration file
+  vim.keymap.set('n', '<leader>ev', '<cmd>edit $MYVIMRC<CR>', { desc = '[E]dit Ne[v]im config' })
+
   -- [[ Basic Autocommands ]]
   --  See `:help lua-guide-autocommands`
 
@@ -259,6 +273,33 @@ do
     desc = 'Highlight when yanking (copying) text',
     group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
     callback = function() vim.hl.on_yank() end,
+  })
+
+  -- Auto-save buffers when they lose focus or are switched away from
+  vim.api.nvim_create_autocmd({ 'BufLeave', 'FocusLost' }, {
+    desc = 'Auto-save buffer on leave or focus lost',
+    group = vim.api.nvim_create_augroup('kickstart-auto-save', { clear = true }),
+    callback = function()
+      if vim.bo.modified and not vim.bo.readonly and vim.fn.expand('%') ~= '' and vim.bo.buftype == '' then
+        vim.cmd 'silent! update'
+      end
+    end,
+  })
+
+  -- Remember cursor position: Jump to the last known cursor position when opening a file
+  vim.api.nvim_create_autocmd('BufReadPost', {
+    desc = 'Jump to the last known cursor position when opening a file',
+    group = vim.api.nvim_create_augroup('kickstart-last-place', { clear = true }),
+    callback = function(args)
+      local mark = vim.api.nvim_buf_get_mark(args.buf, '"')
+      local line_count = vim.api.nvim_buf_line_count(args.buf)
+      if mark[1] > 0 and mark[1] <= line_count then
+        -- Avoid jumping for gitcommit and gitrebase
+        if not vim.tbl_contains({ 'gitcommit', 'gitrebase' }, vim.bo[args.buf].filetype) then
+          vim.cmd 'normal! g`"'
+        end
+      end
+    end,
   })
 end
 
@@ -381,6 +422,7 @@ do
       { '<leader>s', group = '[S]earch', mode = { 'n', 'v' } },
       { '<leader>t', group = '[T]oggle' },
       { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } }, -- Enable gitsigns recommended keymaps first
+      { '<leader>g', group = '[G]it', mode = { 'n', 'v' } },
       { 'gr', group = 'LSP Actions', mode = { 'n' } },
     },
   }
@@ -399,10 +441,23 @@ do
     },
   }
 
+  -- koda theme
+  vim.pack.add { gh 'oskarnurm/koda.nvim' }
+  ---@diagnostic disable-next-line: missing-fields
+  require('koda').setup {
+    styles = {
+      comments = { italic = true },
+    },
+  }
+
+
   -- Load the colorscheme here.
   -- Like many other themes, this one has different styles, and you could load
   -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-  vim.cmd.colorscheme 'tokyonight-night'
+  -- vim.cmd.colorscheme 'tokyonight-night'
+  -- vim.cmd.colorscheme 'tokyonight-moon'
+  -- vim.cmd.colorscheme 'default'
+  vim.cmd.colorscheme 'koda-moss'
 
   -- Highlight todo, notes, etc in comments
   vim.pack.add { gh 'folke/todo-comments.nvim' }
@@ -523,6 +578,9 @@ do
   vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
   vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
   vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+  vim.keymap.set('n', '<leader>sF', function()
+    builtin.find_files { no_ignore = true, hidden = true, file_ignore_patterns = { '%.git/' } }
+  end, { desc = '[S]earch all [F]iles (including ignored/hidden)' })
   vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
   vim.keymap.set({ 'n', 'v' }, '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
   vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
@@ -531,6 +589,12 @@ do
   vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
   vim.keymap.set('n', '<leader>sc', builtin.commands, { desc = '[S]earch [C]ommands' })
   vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+
+  -- Git-related Telescope search keymaps
+  vim.keymap.set('n', '<leader>gf', builtin.git_files, { desc = 'Search [G]it [F]iles' })
+  vim.keymap.set('n', '<leader>gs', builtin.git_status, { desc = 'Search [G]it [S]tatus (Changed Files)' })
+  vim.keymap.set('n', '<leader>gc', builtin.git_commits, { desc = 'Search [G]it [C]ommands / Commits' })
+  vim.keymap.set('n', '<leader>gb', builtin.git_branches, { desc = 'Search [G]it [B]ranches' })
 
   -- Add Telescope-based LSP pickers when an LSP attaches to a buffer.
   -- If you later switch picker plugins, this is where to update these mappings.
@@ -977,9 +1041,9 @@ do
   -- require 'kickstart.plugins.debug'
   -- require 'kickstart.plugins.indent_line'
   -- require 'kickstart.plugins.lint'
-  -- require 'kickstart.plugins.autopairs'
+  require 'kickstart.plugins.autopairs'
   -- require 'kickstart.plugins.neo-tree'
-  -- require 'kickstart.plugins.gitsigns' -- adds gitsigns recommended keymaps
+  require 'kickstart.plugins.gitsigns' -- adds gitsigns recommended keymaps
 
   -- NOTE: You can add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --
