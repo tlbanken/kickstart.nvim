@@ -457,7 +457,7 @@ do
   -- vim.cmd.colorscheme 'tokyonight-night'
   -- vim.cmd.colorscheme 'tokyonight-moon'
   -- vim.cmd.colorscheme 'default'
-  vim.cmd.colorscheme 'koda-moss'
+  -- vim.cmd.colorscheme 'koda-moss'
 
   -- Highlight todo, notes, etc in comments
   vim.pack.add { gh 'folke/todo-comments.nvim' }

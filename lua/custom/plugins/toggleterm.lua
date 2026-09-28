@@ -25,11 +25,10 @@ require('toggleterm').setup {
 
 -- Keymaps
 local keymap = vim.keymap.set
-keymap('n', '<leader>tt', '<cmd>ToggleTerm direction=horizontal<CR>', { desc = '[T]oggle [T]erminal (horizontal)' })
 keymap('n', '<leader>tf', '<cmd>ToggleTerm direction=float<CR>', { desc = '[T]oggle [T]erminal (float)' })
+keymap('n', '<leader>tt', '<cmd>ToggleTerm direction=horizontal<CR>', { desc = '[T]oggle [T]erminal (horizontal)' })
 keymap('n', '<leader>tv', '<cmd>ToggleTerm direction=vertical<CR>', { desc = '[T]oggle [T]erminal (vertical)' })
-keymap('n', '<C-]>', '<cmd>ToggleTerm direction=float<CR>', { desc = 'Toggle float terminal' })
+keymap('n', '<C-\\>', '<cmd>ToggleTerm direction=float<CR>', { desc = 'Toggle float terminal' })
 
 -- Make <Esc><Esc> exit terminal mode (consistent with rest of config)
 keymap('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
-keymap('t', '<C-]>', '<cmd>ToggleTerm<CR>', { desc = 'Toggle float terminal' })
